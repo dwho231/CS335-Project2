@@ -35,13 +35,16 @@ export let defaultFSText = `
 	
     
     void main () {
-		if (normal == vec4(1.0, 0.0, 0.0, 0.0) || normal == vec4(-1.0, 0.0, 0.0, 0.0)) {
-			gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-		} else if (normal == vec4(0.0, 1.0, 0.0, 0.0) || normal == vec4(0.0, -1.0, 0.0, 0.0)) {
-			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-		} else if (normal == vec4(0.0, 0.0, 1.0, 0.0) || normal == vec4(0.0, 0.0, -1.0, 0.0)) {
-			gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+		vec3 color;
+		if (normal.xyz == vec3(1.0, 0.0, 0.0) || normal.xyz == vec3(-1.0, 0.0, 0.0)) {
+			color = vec3(1.0, 0.0, 0.0);
+		} else if (normal.xyz == vec3(0.0, 1.0, 0.0) || normal.xyz == vec3(0.0, -1.0, 0.0)) {
+			color = vec3(0.0, 1.0, 0.0);
+		} else if (normal.xyz == vec3(0.0, 0.0, 1.0) || normal.xyz == vec3(0.0, 0.0, -1.0)) {
+			color = vec3(0.0, 0.0, 1.0);
 		}
+		float diffuse = dot(normal.xyz, normalize(lightDir.xyz));
+		gl_FragColor = vec4(color * diffuse, 1.0);
 	}
 `;
 
