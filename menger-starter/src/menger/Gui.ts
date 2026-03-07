@@ -1,4 +1,4 @@
-import { Camera } from "../lib/webglutils/Camera.js";
+import { Camera, RayCamera } from "../lib/webglutils/Camera.js";
 import { CanvasAnimation } from "../lib/webglutils/CanvasAnimation.js";
 import { MengerSponge } from "./MengerSponge.js";
 import { Mat4, Vec3 } from "../lib/TSM.js";
@@ -36,6 +36,9 @@ export class GUI implements IGUI {
 
   private sponge: MengerSponge;
   private animation: CanvasAnimation;
+
+  private isPressing2: boolean;
+  private isPressing0: boolean;
 
   /**
    *
@@ -109,6 +112,8 @@ export class GUI implements IGUI {
     return this.camera.projMatrix();
   }
 
+
+
   /**
    * Callback function for the start of a drag event.
    * @param mouse
@@ -117,6 +122,18 @@ export class GUI implements IGUI {
     this.dragging = true;
     this.prevX = mouse.screenX;
     this.prevY = mouse.screenY;
+
+    // We only care about rotating the camera if we are holding down the left mouse button
+    if (mouse.button == 0)
+    {
+      this.isPressing0 = true;
+    }
+
+    // We only care about zooming in if we are holding down the right mouse button
+    if (mouse.button == 2)
+    {
+      this.isPressing2 = true;
+    }
   }
 
   /**
@@ -125,12 +142,39 @@ export class GUI implements IGUI {
    * before dragEnd.
    * @param mouse
    */
-  public drag(mouse: MouseEvent): void {
+  public drag(mouse: MouseEvent): void 
+  {
 	  
 	  // TODO: Your code here for left and right mouse drag
-	  
-  }
+    const deltaX = mouse.screenX - this.prevX;
+    const deltaY = mouse.screenY - this.prevY;
+    
+    // Left mouse button handles camera rotation
+    if (this.isPressing0)
+    {
 
+    }
+  
+    // Right mouse button handles camera zooming
+     if (this.isPressing2)
+     {
+
+        // Dragging mouse up = zoom in
+        if (deltaY > 0)
+        {
+          this.camera.offsetDist(GUI.zoomSpeed);
+        }
+
+        // Dragging mouse down = zoom out
+        else if (deltaY < 0)
+        {
+          this.camera.offsetDist(-GUI.zoomSpeed);
+        }
+
+      }
+  }
+	  
+  
   /**
    * Callback function for the end of a drag event
    * @param mouse
@@ -139,6 +183,8 @@ export class GUI implements IGUI {
     this.dragging = false;
     this.prevX = 0;
     this.prevY = 0;
+    this.isPressing2 = false;
+    this.isPressing0 = false;
   }
 
   /**
@@ -157,42 +203,76 @@ export class GUI implements IGUI {
 	// TOOD: Your code for key handling
 
     switch (key.code) {
-      case "KeyW": {
 
+      // Holding down the W or S key should translate both the eye and center by +/- zoom_speed times the look direction
+      // W = move closer
+      case "KeyW": 
+      {
+        this.camera.offset(this.camera.forward().copy(), -GUI.zoomSpeed, true);
         break;
       }
-      case "KeyA": {
 
+      // Holding down the A or D key should translate both the eye and center by +/- pan_speed times the right direction
+      // A = move view to the left
+      case "KeyA":
+      {
+        this.camera.offset(this.camera.right().copy(), -GUI.panSpeed, true);
         break;
       }
-      case "KeyS": {
 
+      // Holding down the W or S key should translate both the eye and center by +/- zoom_speed times the look direction
+      // S = move away
+      case "KeyS": 
+      {
+        this.camera.offset(this.camera.forward().copy(), GUI.zoomSpeed, true);
         break;
       }
-      case "KeyD": {
 
+      // Holding down the A or D key should translate both the eye and center by +/- pan_speed times the right direction
+      // D = move view to the right
+      case "KeyD": 
+      {
+        this.camera.offset(this.camera.right().copy(), GUI.panSpeed, true);
         break;
       }
-      case "KeyR": {
 
+      case "KeyR": 
+      {
         break;
       }
-      case "ArrowLeft": {
 
+      // Pressing the left and right arrow keys should roll the camera, spin it counterclockwise/clockwise by roll_speed radians per frame
+      // Left = counterclockwise
+      case "ArrowLeft": 
+      {
+        this.camera.roll(GUI.rollSpeed, false);
         break;
       }
-      case "ArrowRight": {
 
+      // Pressing the left and right arrow keys should roll the camera, spin it counterclockwise/clockwise by roll_speed radians per frame
+      // Right = clockwise
+      case "ArrowRight": 
+      {
+        this.camera.roll(GUI.rollSpeed, true);
         break;
       }
-      case "ArrowUp": {
 
+      // Holding the up and down arrow keys should translate the camera position (like A and D) but this time in the +/- up direction
+      // Up = move view up
+      case "ArrowUp": 
+      {
+        this.camera.offset(this.camera.up().copy(), GUI.panSpeed, true);
         break;
       }
-      case "ArrowDown": {
 
+      // Holding the up and down arrow keys should translate the camera position (like A and D) but this time in the +/- up direction
+      // Down = move view down
+      case "ArrowDown": 
+      {
+        this.camera.offset(this.camera.up().copy(), -GUI.panSpeed, true);
         break;
       }
+
       case "Digit1": {
         this.sponge.setLevel(1);
         break;
