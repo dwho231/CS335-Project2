@@ -37,9 +37,6 @@ export class GUI implements IGUI {
   private sponge: MengerSponge;
   private animation: CanvasAnimation;
 
-  private isPressing2: boolean;
-  private isPressing0: boolean;
-
   /**
    *
    * @param canvas required to get the width and height of the canvas
@@ -113,7 +110,6 @@ export class GUI implements IGUI {
   }
 
 
-
   /**
    * Callback function for the start of a drag event.
    * @param mouse
@@ -123,17 +119,6 @@ export class GUI implements IGUI {
     this.prevX = mouse.screenX;
     this.prevY = mouse.screenY;
 
-    // We only care about rotating the camera if we are holding down the left mouse button
-    if (mouse.button == 0)
-    {
-      this.isPressing0 = true;
-    }
-
-    // We only care about zooming in if we are holding down the right mouse button
-    if (mouse.button == 2)
-    {
-      this.isPressing2 = true;
-    }
   }
 
   /**
@@ -144,22 +129,24 @@ export class GUI implements IGUI {
    */
   public drag(mouse: MouseEvent): void 
   {
-	  
-	  // TODO: Your code here for left and right mouse drag
+    // Calculate the difference in our mouse positions during dragging to determine how much
+    // the user wants to affect the scene (how much they want to zoom/turn the camera)
     const deltaX = mouse.screenX - this.prevX;
     const deltaY = mouse.screenY - this.prevY;
-    
-    // Left mouse button handles camera rotation
-    if (this.isPressing0)
+
+    // We only care about rotating the camera if we are holding down the left mouse button
+    if (mouse.buttons == 1)
     {
-
+      // New Vector is perpendicular to vector of our mouse dragging inputs
+      // Rotate the camera about this new vector in negative rotation speed so we move in the correct directions
+      this.camera.rotate(new Vec3([-deltaY, deltaX, 0]), -GUI.rotationSpeed);
+      
     }
-  
-    // Right mouse button handles camera zooming
-     if (this.isPressing2)
-     {
 
-        // Dragging mouse up = zoom in
+    // We only care about zooming in if we are holding down the right mouse button
+    if (mouse.buttons == 2)
+    {
+      // Dragging mouse up = zoom in
         if (deltaY > 0)
         {
           this.camera.offsetDist(GUI.zoomSpeed);
@@ -170,21 +157,20 @@ export class GUI implements IGUI {
         {
           this.camera.offsetDist(-GUI.zoomSpeed);
         }
-
-      }
-  }
+    }
+    
+   }
 	  
   
   /**
    * Callback function for the end of a drag event
    * @param mouse
    */
-  public dragEnd(mouse: MouseEvent): void {
+  public dragEnd(mouse: MouseEvent): void 
+  {
     this.dragging = false;
     this.prevX = 0;
     this.prevY = 0;
-    this.isPressing2 = false;
-    this.isPressing0 = false;
   }
 
   /**
@@ -200,9 +186,8 @@ export class GUI implements IGUI {
        We can use KeyDown due to auto repeating.
      */
 
-	// TOOD: Your code for key handling
-
-    switch (key.code) {
+    switch (key.code) 
+    {
 
       // Holding down the W or S key should translate both the eye and center by +/- zoom_speed times the look direction
       // W = move closer
@@ -233,11 +218,6 @@ export class GUI implements IGUI {
       case "KeyD": 
       {
         this.camera.offset(this.camera.right().copy(), GUI.panSpeed, true);
-        break;
-      }
-
-      case "KeyR": 
-      {
         break;
       }
 
@@ -273,23 +253,37 @@ export class GUI implements IGUI {
         break;
       }
 
-      case "Digit1": {
+      // 1 = Sponge Level 1
+      case "Digit1": 
+      {
         this.sponge.setLevel(1);
         break;
       }
-      case "Digit2": {
+
+      // 2 = Sponge Level 2
+      case "Digit2": 
+      {
         this.sponge.setLevel(2);
         break;
       }
-      case "Digit3": {
+
+      // 3 = Sponge Level 3
+      case "Digit3": 
+      {
         this.sponge.setLevel(3);
         break;
       }
-      case "Digit4": {
+
+      // 4 = Sponge Level 4
+      case "Digit4": 
+      {
         this.sponge.setLevel(4);
         break;
       }
-      default: {
+
+      // Print to the console which key was pressed (for debugging)
+      default: 
+      {
         console.log("Key : '", key.code, "' was pressed.");
         break;
       }
