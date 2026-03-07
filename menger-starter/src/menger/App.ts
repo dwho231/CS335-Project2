@@ -1,6 +1,6 @@
 import {
   CanvasAnimation,
-  WebGLUtilities
+  WebGLUtilities,
 } from "../lib/webglutils/CanvasAnimation.js";
 import { GUI } from "./Gui.js";
 import { MengerSponge } from "./MengerSponge.js";
@@ -9,7 +9,7 @@ import {
   defaultFSText,
   defaultVSText,
   floorFSText,
-  floorVSText
+  floorVSText,
 } from "./Shaders.js";
 import { Mat4, Vec4 } from "../lib/TSM.js";
 
@@ -22,7 +22,7 @@ export interface MengerAnimationTest {
 
 export class MengerAnimation extends CanvasAnimation {
   private gui: GUI;
-  
+
   /* The Menger sponge */
   private sponge: MengerSponge = new MengerSponge(1);
 
@@ -50,7 +50,24 @@ export class MengerAnimation extends CanvasAnimation {
   private backgroundColor: Vec4 = new Vec4();
 
   // TODO: data structures for the floor
+  /* Floor Rendering Info */
+  private floorVAO: WebGLVertexArrayObjectOES = -1;
+  private floorProgram: WebGLProgram = -1;
 
+  /* Floor Buffers */
+  private floorPosBuffer: WebGLBuffer = -1;
+  private floorIndexBuffer: WebGLBuffer = -1;
+  private floorNormBuffer: WebGLBuffer = -1;
+
+  /* Floor Attribute Locations */
+  private floorPosAttribLoc: GLint = -1;
+  private floorNormAttribLoc: GLint = -1;
+
+  /* Floor Uniform Locations */
+  private floorWorldUniformLocation: WebGLUniformLocation = -1;
+  private floorViewUniformLocation: WebGLUniformLocation = -1;
+  private floorProjUniformLocation: WebGLUniformLocation = -1;
+  private floorLightUniformLocation: WebGLUniformLocation = -1;
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
@@ -64,7 +81,6 @@ export class MengerAnimation extends CanvasAnimation {
    * Setup the animation. This can be called again to reset the animation.
    */
   public reset(): void {
-
     /* debugger; */
     this.lightPosition = new Vec4([-10.0, 10.0, -10.0, 1.0]);
     this.backgroundColor = new Vec4([0.0, 0.37254903, 0.37254903, 1.0]);
@@ -73,37 +89,35 @@ export class MengerAnimation extends CanvasAnimation {
     this.initFloor();
 
     this.gui.reset();
-
   }
 
   /**
    * Initialize the Menger sponge data structure
    */
   public initMenger(): void {
-    
     this.sponge.setLevel(1);
-    
+
     /* Alias context for syntactic convenience */
     const gl: WebGLRenderingContext = this.ctx;
 
-    
     /* Compile Shaders */
     this.mengerProgram = WebGLUtilities.createProgram(
       gl,
       defaultVSText,
-      defaultFSText
+      defaultFSText,
     );
     gl.useProgram(this.mengerProgram);
 
     /* Create VAO for Menger Sponge */
-    this.mengerVAO = this.extVAO.createVertexArrayOES() as WebGLVertexArrayObjectOES;
+    this.mengerVAO =
+      this.extVAO.createVertexArrayOES() as WebGLVertexArrayObjectOES;
     this.extVAO.bindVertexArrayOES(this.mengerVAO);
 
     /* Create and setup positions buffer*/
     // Returns a number that indicates where 'vertPosition' is in the shader program
     this.mengerPosAttribLoc = gl.getAttribLocation(
       this.mengerProgram,
-      "vertPosition"
+      "vertPosition",
     );
     /* Ask WebGL to create a buffer */
     this.mengerPosBuffer = gl.createBuffer() as WebGLBuffer;
@@ -119,7 +133,7 @@ export class MengerAnimation extends CanvasAnimation {
       false /* Normalize data. Should be false. */,
       4 *
         Float32Array.BYTES_PER_ELEMENT /* Number of bytes to the next element */,
-      0 /* Initial offset into buffer */
+      0 /* Initial offset into buffer */,
     );
     /* Tell WebGL to enable to attribute */
     gl.enableVertexAttribArray(this.mengerPosAttribLoc);
@@ -127,7 +141,7 @@ export class MengerAnimation extends CanvasAnimation {
     /* Create and setup normals buffer*/
     this.mengerNormAttribLoc = gl.getAttribLocation(
       this.mengerProgram,
-      "aNorm"
+      "aNorm",
     );
     this.mengerNormBuffer = gl.createBuffer() as WebGLBuffer;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.mengerNormBuffer);
@@ -138,7 +152,7 @@ export class MengerAnimation extends CanvasAnimation {
       gl.FLOAT,
       false,
       4 * Float32Array.BYTES_PER_ELEMENT,
-      0
+      0,
     );
     gl.enableVertexAttribArray(this.mengerNormAttribLoc);
 
@@ -148,7 +162,7 @@ export class MengerAnimation extends CanvasAnimation {
     gl.bufferData(
       gl.ELEMENT_ARRAY_BUFFER,
       this.sponge.indicesFlat(),
-      gl.STATIC_DRAW
+      gl.STATIC_DRAW,
     );
 
     /* End VAO recording */
@@ -157,36 +171,36 @@ export class MengerAnimation extends CanvasAnimation {
     /* Get uniform locations */
     this.mengerWorldUniformLocation = gl.getUniformLocation(
       this.mengerProgram,
-      "mWorld"
+      "mWorld",
     ) as WebGLUniformLocation;
     this.mengerViewUniformLocation = gl.getUniformLocation(
       this.mengerProgram,
-      "mView"
+      "mView",
     ) as WebGLUniformLocation;
     this.mengerProjUniformLocation = gl.getUniformLocation(
       this.mengerProgram,
-      "mProj"
+      "mProj",
     ) as WebGLUniformLocation;
     this.mengerLightUniformLocation = gl.getUniformLocation(
       this.mengerProgram,
-      "lightPosition"
+      "lightPosition",
     ) as WebGLUniformLocation;
 
     /* Bind uniforms */
     gl.uniformMatrix4fv(
       this.mengerWorldUniformLocation,
       false,
-      new Float32Array(this.sponge.uMatrix().all())
+      new Float32Array(this.sponge.uMatrix().all()),
     );
     gl.uniformMatrix4fv(
       this.mengerViewUniformLocation,
       false,
-      new Float32Array(Mat4.identity.all())
+      new Float32Array(Mat4.identity.all()),
     );
     gl.uniformMatrix4fv(
       this.mengerProjUniformLocation,
       false,
-      new Float32Array(Mat4.identity.all())
+      new Float32Array(Mat4.identity.all()),
     );
     gl.uniform4fv(this.mengerLightUniformLocation, this.lightPosition.xyzw);
   }
@@ -195,15 +209,108 @@ export class MengerAnimation extends CanvasAnimation {
    * Sets up the floor and floor drawing
    */
   public initFloor(): void {
-      
-      // TODO: your code to set up the floor rendering
+    // TODO: your code to set up the floor rendering
+    const gl: WebGLRenderingContext = this.ctx;
+
+    const floorVertices = new Float32Array([
+      -100.0, -2.0, -100.0, 1.0, 100.0, -2.0, -100.0, 1.0, 100.0, -2.0, 100.0,
+      1.0, -100.0, -2.0, 100.0, 1.0,
+    ]);
+
+    const floorNormals = new Float32Array([
+      0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+      0.0,
+    ]);
+
+    const floorIndices = new Uint32Array([0, 1, 2, 0, 2, 3]);
+
+    this.floorProgram = WebGLUtilities.createProgram(
+      gl,
+      floorVSText,
+      floorFSText,
+    );
+    gl.useProgram(this.floorProgram);
+
+    this.floorVAO =
+      this.extVAO.createVertexArrayOES() as WebGLVertexArrayObjectOES;
+    this.extVAO.bindVertexArrayOES(this.floorVAO);
+
+    this.floorPosAttribLoc = gl.getAttribLocation(
+      this.floorProgram,
+      "vertPosition",
+    );
+    this.floorPosBuffer = gl.createBuffer() as WebGLBuffer;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.floorPosBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, floorVertices, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(
+      this.floorPosAttribLoc,
+      4,
+      gl.FLOAT,
+      false,
+      4 * Float32Array.BYTES_PER_ELEMENT,
+      0,
+    );
+    gl.enableVertexAttribArray(this.floorPosAttribLoc);
+
+    this.floorNormAttribLoc = gl.getAttribLocation(this.floorProgram, "aNorm");
+    this.floorNormBuffer = gl.createBuffer() as WebGLBuffer;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.floorNormBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, floorNormals, gl.STATIC_DRAW);
+    gl.vertexAttribPointer(
+      this.floorNormAttribLoc,
+      4,
+      gl.FLOAT,
+      false,
+      4 * Float32Array.BYTES_PER_ELEMENT,
+      0,
+    );
+    gl.enableVertexAttribArray(this.floorNormAttribLoc);
+
+    this.floorIndexBuffer = gl.createBuffer() as WebGLBuffer;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.floorIndexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, floorIndices, gl.STATIC_DRAW);
+
+    this.extVAO.bindVertexArrayOES(this.floorVAO);
+
+    this.floorWorldUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "mWorld",
+    ) as WebGLUniformLocation;
+    this.floorViewUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "mView",
+    ) as WebGLUniformLocation;
+    this.floorProjUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "mProj",
+    ) as WebGLUniformLocation;
+    this.floorLightUniformLocation = gl.getUniformLocation(
+      this.floorProgram,
+      "lightPosition",
+    ) as WebGLUniformLocation;
+
+    gl.uniformMatrix4fv(
+      this.floorWorldUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all()),
+    );
+    gl.uniformMatrix4fv(
+      this.floorViewUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all()),
+    );
+    gl.uniformMatrix4fv(
+      this.floorProjUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all()),
+    );
+    gl.uniform4fv(this.floorLightUniformLocation, this.lightPosition.xyzw);
   }
 
   /**
    * Draws a single frame
    */
   public draw(): void {
-
     const gl: WebGLRenderingContext = this.ctx;
 
     /* Clear canvas */
@@ -227,7 +334,7 @@ export class MengerAnimation extends CanvasAnimation {
       gl.bufferData(
         gl.ARRAY_BUFFER,
         this.sponge.positionsFlat(),
-        gl.STATIC_DRAW
+        gl.STATIC_DRAW,
       );
       gl.vertexAttribPointer(
         this.mengerPosAttribLoc,
@@ -235,7 +342,7 @@ export class MengerAnimation extends CanvasAnimation {
         gl.FLOAT,
         false,
         4 * Float32Array.BYTES_PER_ELEMENT,
-        0
+        0,
       );
       gl.enableVertexAttribArray(this.mengerPosAttribLoc);
 
@@ -247,7 +354,7 @@ export class MengerAnimation extends CanvasAnimation {
         gl.FLOAT,
         false,
         4 * Float32Array.BYTES_PER_ELEMENT,
-        0
+        0,
       );
       gl.enableVertexAttribArray(this.mengerNormAttribLoc);
 
@@ -255,7 +362,7 @@ export class MengerAnimation extends CanvasAnimation {
       gl.bufferData(
         gl.ELEMENT_ARRAY_BUFFER,
         this.sponge.indicesFlat(),
-        gl.STATIC_DRAW
+        gl.STATIC_DRAW,
       );
 
       this.sponge.setClean();
@@ -265,32 +372,52 @@ export class MengerAnimation extends CanvasAnimation {
     gl.uniformMatrix4fv(
       this.mengerWorldUniformLocation,
       false,
-      new Float32Array(modelMatrix.all())
+      new Float32Array(modelMatrix.all()),
     );
     gl.uniformMatrix4fv(
       this.mengerViewUniformLocation,
       false,
-      new Float32Array(this.gui.viewMatrix().all())
+      new Float32Array(this.gui.viewMatrix().all()),
     );
     gl.uniformMatrix4fv(
       this.mengerProjUniformLocation,
       false,
-      new Float32Array(this.gui.projMatrix().all())
+      new Float32Array(this.gui.projMatrix().all()),
     );
-	
-	console.log("Drawing ", this.sponge.indicesFlat().length, " triangles");
 
+    console.log("Drawing ", this.sponge.indicesFlat().length, " triangles");
 
     /* Draw menger */
     gl.drawElements(
       gl.TRIANGLES,
       this.sponge.indicesFlat().length,
       gl.UNSIGNED_INT,
-      0
+      0,
     );
 
     // TODO: draw the floor
-    
+    /* Draw floor */
+    gl.useProgram(this.floorProgram);
+    this.extVAO.bindVertexArrayOES(this.floorVAO);
+
+    gl.uniformMatrix4fv(
+      this.floorWorldUniformLocation,
+      false,
+      new Float32Array(Mat4.identity.all()),
+    );
+    gl.uniformMatrix4fv(
+      this.floorViewUniformLocation,
+      false,
+      new Float32Array(this.gui.viewMatrix().all()),
+    );
+    gl.uniformMatrix4fv(
+      this.floorProjUniformLocation,
+      false,
+      new Float32Array(this.gui.projMatrix().all()),
+    );
+    gl.uniform4fv(this.floorLightUniformLocation, this.lightPosition.xyzw);
+
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
   }
 
   public setLevel(level: number): void {

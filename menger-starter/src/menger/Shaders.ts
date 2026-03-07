@@ -50,6 +50,61 @@ export let defaultFSText = `
 
 // TODO: floor shaders
 
-export let floorVSText = ``;
-export let floorFSText = ``;
+// export let floorVSText = ``;
+//export let floorFSText = ``;
+// Floor shaders
 
+export let floorVSText = `
+    precision mediump float;
+
+    attribute vec4 vertPosition;
+    attribute vec4 aNorm;
+
+    varying vec4 lightDir;
+    varying vec4 normal;
+    varying vec4 worldPos;
+
+    uniform vec4 lightPosition;
+    uniform mat4 mWorld;
+    uniform mat4 mView;
+    uniform mat4 mProj;
+
+    void main () {
+        worldPos = mWorld * vertPosition;
+        gl_Position = mProj * mView * worldPos;
+
+        lightDir = lightPosition - worldPos;
+        normal = aNorm;
+    }
+`;
+
+export let floorFSText = `
+    precision mediump float;
+
+    varying vec4 lightDir;
+    varying vec4 normal;
+    varying vec4 worldPos;
+
+    void main () {
+        vec3 N = normalize(normal.xyz);
+        vec3 L = normalize(lightDir.xyz);
+
+        float diffuse = max(dot(N, L), 0.0);
+        float ambient = 0.2;
+
+        float cellSize = 5.0;
+        float xCell = floor(worldPos.x / cellSize);
+        float zCell = floor(worldPos.z / cellSize);
+        float checker = mod(xCell + zCell, 2.0);
+
+        vec3 baseColor;
+        if (checker < 1.0) {
+            baseColor = vec3(1.0, 1.0, 1.0);
+        } else {
+            baseColor = vec3(0.0, 0.0, 0.0);
+        }
+
+        vec3 color = baseColor * (ambient + 0.8 * diffuse);
+        gl_FragColor = vec4(color, 1.0);
+    }
+`;
