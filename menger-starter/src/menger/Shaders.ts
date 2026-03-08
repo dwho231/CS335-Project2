@@ -63,6 +63,7 @@ export let floorVSText = `
     varying vec4 lightDir;
     varying vec4 normal;
     varying vec4 worldPos;
+    varying vec4 viewPos;
 
     uniform vec4 lightPosition;
     uniform mat4 mWorld;
@@ -71,7 +72,8 @@ export let floorVSText = `
 
     void main () {
         worldPos = mWorld * vertPosition;
-        gl_Position = mProj * mView * worldPos;
+        viewPos = mView * worldPos;
+        gl_Position = mProj * viewPos;
 
         lightDir = lightPosition - worldPos;
         normal = aNorm;
@@ -84,13 +86,14 @@ export let floorFSText = `
     varying vec4 lightDir;
     varying vec4 normal;
     varying vec4 worldPos;
+    varying vec4 viewPos;
 
     void main () {
         vec3 N = normalize(normal.xyz);
         vec3 L = normalize(lightDir.xyz);
 
         float diffuse = max(dot(N, L), 0.0);
-        float ambient = 0.2;
+        float ambient = 0.20;
 
         float cellSize = 5.0;
         float xCell = floor(worldPos.x / cellSize);
@@ -99,12 +102,21 @@ export let floorFSText = `
 
         vec3 baseColor;
         if (checker < 1.0) {
-            baseColor = vec3(1.0, 1.0, 1.0);
-        } else {
             baseColor = vec3(0.0, 0.0, 0.0);
+        } else {
+            baseColor = vec3(1.0, 1.0, 1.0);
         }
 
-        vec3 color = baseColor * (ambient + 0.8 * diffuse);
+        vec3 litColor = baseColor * (ambient + 0.55 * diffuse);
+
+        float depth = -viewPos.z;
+
+        float farFade = smoothstep(12.0, 65.0, depth);
+
+        /* curve the fade */
+        farFade = farFade * farFade * farFade * farFade;
+        vec3 color = litColor * (1.0 - 0.8 * farFade);
+
         gl_FragColor = vec4(color, 1.0);
     }
 `;

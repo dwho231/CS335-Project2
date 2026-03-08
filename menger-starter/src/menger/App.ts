@@ -222,7 +222,7 @@ export class MengerAnimation extends CanvasAnimation {
       0.0,
     ]);
 
-    const floorIndices = new Uint32Array([0, 1, 2, 0, 2, 3]);
+    const floorIndices = new Uint32Array([0, 2, 1, 0, 3, 2]);
 
     this.floorProgram = WebGLUtilities.createProgram(
       gl,
