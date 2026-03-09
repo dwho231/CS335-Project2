@@ -2,6 +2,7 @@ import { Camera, RayCamera } from "../lib/webglutils/Camera.js";
 import { CanvasAnimation } from "../lib/webglutils/CanvasAnimation.js";
 import { MengerSponge } from "./MengerSponge.js";
 import { Mat4, Vec3 } from "../lib/TSM.js";
+import { exportToOBJ } from "./Utils.js";
 
 /**
  * Might be useful for designing any animation GUI
@@ -191,9 +192,15 @@ export class GUI implements IGUI {
       }
 
       // Holding down the W or S key should translate both the eye and center by +/- zoom_speed times the look direction
-      // S = move away
+      // S = move away 
+      // ctrl + S = save geometry
       case "KeyS": {
-        this.camera.offset(this.camera.forward().copy(), GUI.zoomSpeed, true);
+        if (key.ctrlKey) {
+          key.preventDefault();
+          this.saveGeometry();
+        } else {
+          this.camera.offset(this.camera.forward().copy(), GUI.zoomSpeed, true);
+        }
         break;
       }
 
@@ -262,6 +269,30 @@ export class GUI implements IGUI {
         break;
       }
     }
+  }
+
+  /**
+   * Saves the current Menger Sponge geometry to an OBJ file
+   */
+
+  private saveGeometry(): void {
+    const objContent = exportToOBJ(this.sponge.positionsFlat(), this.sponge.indicesFlat());
+    
+    // Generate filename
+    const filename = `menger_sponge_Project2.obj`;
+    
+    // Create blob and download
+    const blob = new Blob([objContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    console.log(`Menger Sponge geometry has been saved as ${filename}`);
   }
 
   /**
