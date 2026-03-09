@@ -8,3 +8,5 @@ Compile Instructions:
   Follow the link to open up the GUI in a window on your machine
 
 Common Usage:
+  Use Control-S to save the current geometry to an OBJ file.
+  
