@@ -36,15 +36,16 @@ export let defaultFSText = `
     
     void main () {
 		vec3 color;
+		// Check normal and assign color values as determined in assignment instructions on Canvas
 		if (normal.xyz == vec3(1.0, 0.0, 0.0) || normal.xyz == vec3(-1.0, 0.0, 0.0)) {
-			color = vec3(1.0, 0.0, 0.0);
+			color = vec3(1.0, 0.0, 0.0); // Red
 		} else if (normal.xyz == vec3(0.0, 1.0, 0.0) || normal.xyz == vec3(0.0, -1.0, 0.0)) {
-			color = vec3(0.0, 1.0, 0.0);
+			color = vec3(0.0, 1.0, 0.0); // Green
 		} else if (normal.xyz == vec3(0.0, 0.0, 1.0) || normal.xyz == vec3(0.0, 0.0, -1.0)) {
-			color = vec3(0.0, 0.0, 1.0);
+			color = vec3(0.0, 0.0, 1.0); // Blue
 		}
-		float diffuse = dot(normal.xyz, normalize(lightDir.xyz));
-		gl_FragColor = vec4(color * diffuse, 1.0);
+		float diffuse = dot(normal.xyz, normalize(lightDir.xyz)); // Calculate diffuse value from light direction/normal
+		gl_FragColor = vec4(color * diffuse, 1.0); // Adjust color using diffuse value
 	}
 `;
 
