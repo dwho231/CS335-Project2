@@ -2,6 +2,7 @@ import { Camera, RayCamera } from "../lib/webglutils/Camera.js";
 import { CanvasAnimation } from "../lib/webglutils/CanvasAnimation.js";
 import { MengerSponge } from "./MengerSponge.js";
 import { Mat4, Vec3 } from "../lib/TSM.js";
+import { exportToOBJ } from "./Utils.js";
 
 /**
  * Might be useful for designing any animation GUI
@@ -125,28 +126,33 @@ export class GUI implements IGUI {
    * before dragEnd.
    * @param mouse
    */
-  public drag(mouse: MouseEvent): void {
+  public drag(mouse: MouseEvent): void 
+  {
     // Calculate the difference in our mouse positions during dragging to determine how much
     // the user wants to affect the scene (how much they want to zoom/turn the camera)
     const deltaX = mouse.screenX - this.prevX;
     const deltaY = mouse.screenY - this.prevY;
 
     // We only care about rotating the camera if we are holding down the left mouse button
-    if (mouse.buttons == 1) {
+    if (mouse.buttons == 1) 
+    {
       // New Vector is perpendicular to vector of our mouse dragging inputs
       // Rotate the camera about this new vector in negative rotation speed so we move in the correct directions
       this.camera.rotate(new Vec3([-deltaY, deltaX, 0]), -GUI.rotationSpeed);
     }
 
     // We only care about zooming in if we are holding down the right mouse button
-    if (mouse.buttons == 2) {
+    if (mouse.buttons == 2) 
+    {
       // Dragging mouse up = zoom in
-      if (deltaY > 0) {
+      if (deltaY > 0) 
+      {
         this.camera.offsetDist(GUI.zoomSpeed);
       }
 
       // Dragging mouse down = zoom out
-      else if (deltaY < 0) {
+      else if (deltaY < 0) 
+      {
         this.camera.offsetDist(-GUI.zoomSpeed);
       }
     }
@@ -175,83 +181,101 @@ export class GUI implements IGUI {
        We can use KeyDown due to auto repeating.
      */
 
-    switch (key.code) {
+    switch (key.code) 
+    {
       // Holding down the W or S key should translate both the eye and center by +/- zoom_speed times the look direction
       // W = move closer
-      case "KeyW": {
+      case "KeyW": 
+      {
         this.camera.offset(this.camera.forward().copy(), -GUI.zoomSpeed, true);
         break;
       }
 
       // Holding down the A or D key should translate both the eye and center by +/- pan_speed times the right direction
       // A = move view to the left
-      case "KeyA": {
+      case "KeyA": 
+      {
         this.camera.offset(this.camera.right().copy(), -GUI.panSpeed, true);
         break;
       }
 
       // Holding down the W or S key should translate both the eye and center by +/- zoom_speed times the look direction
-      // S = move away
+      // S = move away 
+      // ctrl + S = save geometry
       case "KeyS": {
-        this.camera.offset(this.camera.forward().copy(), GUI.zoomSpeed, true);
+        if (key.ctrlKey) {
+          key.preventDefault();
+          this.saveGeometry();
+        } else {
+          this.camera.offset(this.camera.forward().copy(), GUI.zoomSpeed, true);
+        }
         break;
       }
 
       // Holding down the A or D key should translate both the eye and center by +/- pan_speed times the right direction
       // D = move view to the right
-      case "KeyD": {
+      case "KeyD": 
+      {
         this.camera.offset(this.camera.right().copy(), GUI.panSpeed, true);
         break;
       }
 
       // Pressing the left and right arrow keys should roll the camera, spin it counterclockwise/clockwise by roll_speed radians per frame
       // Left = counterclockwise
-      case "ArrowLeft": {
+      case "ArrowLeft": 
+      {
         this.camera.roll(GUI.rollSpeed, false);
         break;
       }
 
       // Pressing the left and right arrow keys should roll the camera, spin it counterclockwise/clockwise by roll_speed radians per frame
       // Right = clockwise
-      case "ArrowRight": {
+      case "ArrowRight": 
+      {
         this.camera.roll(GUI.rollSpeed, true);
         break;
       }
 
       // Holding the up and down arrow keys should translate the camera position (like A and D) but this time in the +/- up direction
       // Up = move view up
-      case "ArrowUp": {
+      case "ArrowUp": 
+      {
         this.camera.offset(this.camera.up().copy(), GUI.panSpeed, true);
         break;
       }
 
       // Holding the up and down arrow keys should translate the camera position (like A and D) but this time in the +/- up direction
       // Down = move view down
-      case "ArrowDown": {
+      case "ArrowDown": 
+      {
         this.camera.offset(this.camera.up().copy(), -GUI.panSpeed, true);
         break;
       }
 
       // 1 = Sponge Level 1
-      case "Digit1": {
+      case "Digit1": 
+      {
         this.sponge.setLevel(1);
         break;
       }
 
       // 2 = Sponge Level 2
-      case "Digit2": {
+      case "Digit2": 
+      {
         this.sponge.setLevel(2);
         break;
       }
 
       // 3 = Sponge Level 3
-      case "Digit3": {
+      case "Digit3": 
+      {
         this.sponge.setLevel(3);
         break;
       }
 
       // 4 = Sponge Level 4
-      case "Digit4": {
+      case "Digit4": 
+      {
         this.sponge.setLevel(4);
         break;
       }
@@ -262,6 +286,30 @@ export class GUI implements IGUI {
         break;
       }
     }
+  }
+
+  /**
+   * Saves the current Menger Sponge geometry to an OBJ file
+   */
+
+  private saveGeometry(): void {
+    const objContent = exportToOBJ(this.sponge.positionsFlat(), this.sponge.indicesFlat());
+    
+    // Generate filename
+    const filename = `menger_sponge_Project2.obj`;
+    
+    // Create blob and download
+    const blob = new Blob([objContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    console.log(`Menger Sponge geometry has been saved as ${filename}`);
   }
 
   /**

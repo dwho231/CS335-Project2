@@ -18,7 +18,7 @@ Common Usage:
     W/S/A/D: Move around the space - imitating FPS behavior - allows the camera to get closer to the cube
     Left/Right Arrows: Roll/Spin the camera
     Up/Down Arrows: Move the camera up/down
-    Control+S: Save the current cube orientation as an obj file
+    Control+S: Save the current geometry to an OBJ file
   Mouse Inputs
     Right Click + Dragging Mouse Up/Down: Zooms the camera in/out
     Left Click + Dragging Mouse Any Direction: Rotate the camera more freely than can be done with keyboard commands
